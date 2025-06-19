@@ -1,0 +1,104 @@
+Database Creation Prompt for Qudrat Question Management System
+System Requirements:
+Create a PostgreSQL database schema for a Qudrat test preparation system that manages Arabic educational questions. The system needs to handle both لفظي (Verbal) and كمي (Quantitative) question types.
+Core Entities Needed:
+1. QUESTION_TYPES Table
+
+Store main question categories: لفظي (Verbal) and كمي (Quantitative)
+Fields: type_id (PK), type_name (Arabic), type_name_en (English), description, created_at
+Pre-populate with 2 records: لفظي and كمي
+
+2. INTERNAL_TYPES Table
+
+Store subcategories within each question type
+Fields: internal_type_id (PK), type_id (FK), internal_name (Arabic), internal_name_en (English), description, created_at
+Foreign key relationship to question_types
+Pre-populate with:
+
+لفظي subtypes: استيعاب المقروء, التناظر اللفظي, إكمال الجمل, الخطأ السياقي
+كمي subtypes: جبر, هندسة, إحصاء, حساب, مقارنات كمية
+
+
+
+3. PASSAGES Table
+
+Store reading passages for comprehension questions
+Fields: passage_id (PK), passage_title, passage_image (Supabase URL), avg_difficulty (calculated from related questions), created_at, updated_at, status
+Status: 'active', 'inactive', 'draft'
+Note: Passages are stored as images, not text
+
+4. QUESTIONS Table (Main Entity)
+
+Store all question data
+Fields:
+
+q_no (PK), question_title, question_text, question_image (optional)
+mc_a, mc_b, mc_c, mc_d (multiple choice options)
+mc_correct (A, B, C, or D)
+type_id (FK), internal_type_id (FK)
+passage_id (FK, nullable), question_order (1-5 for passage questions, 1 for standalone)
+avg_difficulty (auto-calculated percentage), total_attempts, correct_attempts
+explanation_image, hint_image (both optional Supabase URLs)
+tags (comma-separated), created_at, updated_at, status
+
+
+Status: 'active', 'inactive', 'draft', 'under_review'
+Constraints: correct_attempts ≤ total_attempts, question_order 1-10
+
+5. QUESTION_ATTEMPTS Table
+
+Track student performance for difficulty calculation
+Fields: attempt_id (PK), q_no (FK), student_id, selected_answer, is_correct, time_taken_seconds, attempt_date
+Used to auto-calculate question difficulty
+
+Required Relationships:
+
+question_types (1) → (many) internal_types
+question_types (1) → (many) questions
+internal_types (1) → (many) questions
+passages (1) → (many) questions [optional relationship]
+questions (1) → (many) question_attempts
+
+Business Logic Requirements:
+Auto-Calculation Features:
+
+Question difficulty: Auto-update from question_attempts (percentage who got it correct)
+Passage difficulty: Auto-calculate as average of all linked questions
+Updated timestamps: Auto-update when records change
+
+Data Validation:
+
+mc_correct must be A, B, C, or D only
+avg_difficulty between 0-100
+Status values restricted to specified options
+correct_attempts cannot exceed total_attempts
+
+Special Logic:
+
+Standalone questions: passage_id = NULL, question_order = 1
+Passage-based questions: Same passage_id, question_order = 1,2,3,4,5
+Trigger function: Auto-update difficulty when new attempts recorded
+
+Performance Requirements:
+
+Indexes on: type_id, internal_type_id, passage_id, status, avg_difficulty, attempt dates
+Views for common queries (question_details with joins)
+Optimized for frequent reads, moderate writes
+
+Security Requirements:
+
+Row Level Security (RLS) enabled
+Public read access for questions
+Authenticated-only insert/update permissions
+Proper foreign key constraints with CASCADE/RESTRICT as appropriate
+
+Initial Data Population:
+Please pre-populate the system with the question types and internal types mentioned above, so the system is ready to use immediately.
+Additional Features:
+
+Updated_at triggers for automatic timestamp updates
+Helpful views for common query patterns
+Comments on tables for documentation
+Proper constraint naming for maintainability
+
+Create this schema optimized for a React admin dashboard that will perform CRUD operations, with emphasis on question management, image storage URLs, and performance tracking.

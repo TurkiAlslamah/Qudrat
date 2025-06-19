@@ -1,0 +1,227 @@
+-- Qudrat Question Database - Supabase SQL Schema
+-- Run these commands in Supabase SQL Editor
+
+-- 1. Create question types table (لفظي/كمي)
+CREATE TABLE question_types (
+    type_id SERIAL PRIMARY KEY,
+    type_name VARCHAR(50) NOT NULL UNIQUE, -- 'لفظي' or 'كمي'
+    type_name_en VARCHAR(50) NOT NULL UNIQUE, -- 'Verbal' or 'Quantitative'
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. Create internal types table (subtopics)
+CREATE TABLE internal_types (
+    internal_type_id SERIAL PRIMARY KEY,
+    type_id INTEGER NOT NULL REFERENCES question_types(type_id) ON DELETE CASCADE,
+    internal_name VARCHAR(100) NOT NULL, -- 'استيعاب المقروء', 'جبر', etc.
+    internal_name_en VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(type_id, internal_name)
+);
+
+-- 3. Create passages table (reading passages as images)
+CREATE TABLE passages (
+    passage_id SERIAL PRIMARY KEY,
+    passage_title VARCHAR(200),
+    passage_image VARCHAR(500) NOT NULL, -- Supabase storage URL
+    avg_difficulty DECIMAL(5,2) DEFAULT 0.00, -- 0.00 to 100.00
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('active', 'inactive', 'draft'))
+);
+
+-- 4. Create main questions table
+CREATE TABLE questions (
+    q_no SERIAL PRIMARY KEY,
+    question_title VARCHAR(200), -- e.g. 'اجب على السؤال', 'اختر الإجابة الصحيحة'
+    question_text TEXT NOT NULL, -- Main question text
+    question_image VARCHAR(500), -- Optional: Supabase storage URL for question image
+    
+    -- Multiple choice options
+    mc_a TEXT NOT NULL,
+    mc_b TEXT NOT NULL,
+    mc_c TEXT NOT NULL,
+    mc_d TEXT NOT NULL,
+    mc_correct VARCHAR(1) NOT NULL CHECK (mc_correct IN ('A', 'B', 'C', 'D')),
+    
+    -- Classification foreign keys
+    type_id INTEGER NOT NULL REFERENCES question_types(type_id) ON DELETE RESTRICT,
+    internal_type_id INTEGER NOT NULL REFERENCES internal_types(internal_type_id) ON DELETE RESTRICT,
+    
+    -- Passage relationship (NULL for standalone questions)
+    passage_id INTEGER REFERENCES passages(passage_id) ON DELETE CASCADE,
+    question_order INTEGER DEFAULT 1 CHECK (question_order BETWEEN 1 AND 10),
+    
+    -- Performance metrics
+    avg_difficulty DECIMAL(5,2) DEFAULT 0.00 CHECK (avg_difficulty BETWEEN 0 AND 100),
+    total_attempts INTEGER DEFAULT 0 CHECK (total_attempts >= 0),
+    correct_attempts INTEGER DEFAULT 0 CHECK (correct_attempts >= 0),
+    
+    -- Help content (as images)
+    explanation_image VARCHAR(500), -- Supabase storage URL
+    hint_image VARCHAR(500), -- Supabase storage URL
+    
+    -- Metadata
+    tags TEXT, -- Comma-separated tags
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('active', 'inactive', 'draft', 'under_review')),
+    
+    -- Constraints
+    CONSTRAINT valid_attempts CHECK (correct_attempts <= total_attempts),
+    CONSTRAINT passage_order_logic CHECK (
+        (passage_id IS NULL AND question_order = 1) OR 
+        (passage_id IS NOT NULL AND question_order BETWEEN 1 AND 10)
+    )
+);
+
+-- 5. Create question attempts table (for tracking performance)
+CREATE TABLE question_attempts (
+    attempt_id SERIAL PRIMARY KEY,
+    q_no INTEGER NOT NULL REFERENCES questions(q_no) ON DELETE CASCADE,
+    student_id VARCHAR(100), -- Can be anonymous hash
+    selected_answer VARCHAR(1) NOT NULL CHECK (selected_answer IN ('A', 'B', 'C', 'D')),
+    is_correct BOOLEAN NOT NULL,
+    time_taken_seconds INTEGER CHECK (time_taken_seconds > 0),
+    attempt_date TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_questions_type ON questions(type_id);
+CREATE INDEX idx_questions_internal_type ON questions(internal_type_id);
+CREATE INDEX idx_questions_passage ON questions(passage_id);
+CREATE INDEX idx_questions_status ON questions(status);
+CREATE INDEX idx_questions_difficulty ON questions(avg_difficulty);
+CREATE INDEX idx_attempts_question ON question_attempts(q_no);
+CREATE INDEX idx_attempts_date ON question_attempts(attempt_date);
+CREATE INDEX idx_internal_types_type ON internal_types(type_id);
+
+-- Create updated_at trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Add triggers for updated_at
+CREATE TRIGGER update_questions_updated_at BEFORE UPDATE ON questions
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_passages_updated_at BEFORE UPDATE ON passages
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Function to update question difficulty when attempts are recorded
+CREATE OR REPLACE FUNCTION update_question_difficulty()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE questions 
+    SET 
+        total_attempts = total_attempts + 1,
+        correct_attempts = correct_attempts + CASE WHEN NEW.is_correct THEN 1 ELSE 0 END,
+        avg_difficulty = (
+            (correct_attempts + CASE WHEN NEW.is_correct THEN 1 ELSE 0 END) * 100.0 / 
+            (total_attempts + 1)
+        )
+    WHERE q_no = NEW.q_no;
+    
+    -- Update passage average difficulty
+    UPDATE passages 
+    SET avg_difficulty = (
+        SELECT AVG(q.avg_difficulty)
+        FROM questions q 
+        WHERE q.passage_id = (SELECT passage_id FROM questions WHERE q_no = NEW.q_no)
+        AND q.passage_id IS NOT NULL
+    )
+    WHERE passage_id = (SELECT passage_id FROM questions WHERE q_no = NEW.q_no);
+    
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Trigger to auto-update difficulty on new attempts
+CREATE TRIGGER update_difficulty_on_attempt
+    AFTER INSERT ON question_attempts
+    FOR EACH ROW EXECUTE FUNCTION update_question_difficulty();
+
+-- Insert initial data
+INSERT INTO question_types (type_name, type_name_en, description) VALUES
+('لفظي', 'Verbal', 'الجزء اللفظي من اختبار القدرات'),
+('كمي', 'Quantitative', 'الجزء الكمي من اختبار القدرات');
+
+INSERT INTO internal_types (type_id, internal_name, internal_name_en, description) VALUES
+(1, 'استيعاب المقروء', 'Reading Comprehension', 'فهم النصوص والإجابة على أسئلة متعلقة بها'),
+(1, 'التناظر اللفظي', 'Verbal Analogies', 'إيجاد العلاقة بين الكلمات'),
+(1, 'إكمال الجمل', 'Sentence Completion', 'اختيار الكلمة المناسبة لإكمال الجملة'),
+(1, 'الخطأ السياقي', 'Contextual Error', 'تحديد الخطأ في السياق'),
+(2, 'جبر', 'Algebra', 'المعادلات والمتغيرات'),
+(2, 'هندسة', 'Geometry', 'الأشكال والمساحات'),
+(2, 'إحصاء', 'Statistics', 'التحليل الإحصائي والاحتمالات'),
+(2, 'حساب', 'Arithmetic', 'العمليات الحسابية الأساسية'),
+(2, 'مقارنات كمية', 'Quantitative Comparisons', 'مقارنة القيم والكميات');
+
+-- Create helpful views
+CREATE VIEW question_details AS
+SELECT 
+    q.q_no,
+    q.question_title,
+    q.question_text,
+    q.question_image,
+    q.mc_a, q.mc_b, q.mc_c, q.mc_d, q.mc_correct,
+    qt.type_name,
+    it.internal_name,
+    p.passage_title,
+    p.passage_image,
+    q.question_order,
+    q.avg_difficulty,
+    q.total_attempts,
+    q.explanation_image,
+    q.hint_image,
+    q.tags,
+    q.status,
+    q.created_at
+FROM questions q
+JOIN question_types qt ON q.type_id = qt.type_id
+JOIN internal_types it ON q.internal_type_id = it.internal_type_id
+LEFT JOIN passages p ON q.passage_id = p.passage_id;
+
+-- Create view for passage summary
+CREATE VIEW passage_summary AS
+SELECT 
+    p.passage_id,
+    p.passage_title,
+    p.passage_image,
+    p.avg_difficulty,
+    p.status,
+    COUNT(q.q_no) as total_questions,
+    p.created_at
+FROM passages p
+LEFT JOIN questions q ON p.passage_id = q.passage_id
+GROUP BY p.passage_id, p.passage_title, p.passage_image, p.avg_difficulty, p.status, p.created_at;
+
+-- Enable Row Level Security (RLS) - Optional
+ALTER TABLE question_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE internal_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE passages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE question_attempts ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for public read access (adjust as needed)
+CREATE POLICY "Enable read access for all users" ON question_types FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON internal_types FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON passages FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON questions FOR SELECT USING (true);
+
+-- Policies for authenticated users to insert data
+CREATE POLICY "Enable insert for authenticated users only" ON passages FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Enable insert for authenticated users only" ON questions FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Enable insert for authenticated users only" ON question_attempts FOR INSERT TO authenticated WITH CHECK (true);
+
+COMMENT ON TABLE question_types IS 'Main question categories: لفظي (Verbal) and كمي (Quantitative)';
+COMMENT ON TABLE internal_types IS 'Subcategories within each question type';
+COMMENT ON TABLE passages IS 'Reading passages stored as images for لفظي questions';
+COMMENT ON TABLE questions IS 'Main questions table with text and optional images';
+COMMENT ON TABLE question_attempts IS 'Tracks student attempts for difficulty calculation';
