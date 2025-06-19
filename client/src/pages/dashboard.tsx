@@ -196,41 +196,9 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Mock activity items - replace with real data */}
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Plus className="text-green-600 h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-secondary-900">
-                        <span className="font-medium">Ahmed Al-Rashid</span> added a new question
-                      </p>
-                      <p className="text-xs text-secondary-500 mt-1">2 minutes ago</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Activity className="text-blue-600 h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-secondary-900">
-                        <span className="font-medium">Sara Mohamed</span> updated passage #156
-                      </p>
-                      <p className="text-xs text-secondary-500 mt-1">15 minutes ago</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Activity className="text-yellow-600 h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-secondary-900">
-                        System generated difficulty report
-                      </p>
-                      <p className="text-xs text-secondary-500 mt-1">1 hour ago</p>
-                    </div>
+                  <div className="text-center py-8">
+                    <p className="text-secondary-500">No recent activity</p>
+                    <p className="text-xs text-secondary-400 mt-1">Activity will appear here as you use the system</p>
                   </div>
                 </div>
               </CardContent>

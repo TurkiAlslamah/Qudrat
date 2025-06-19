@@ -16,7 +16,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questions = await storage.getQuestions(limit, offset, searchTerm, typeFilter);
       res.json(questions);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch questions", error: error.message });
+      res.status(500).json({ message: "Failed to fetch questions", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -31,7 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(question);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch question", error: error.message });
+      res.status(500).json({ message: "Failed to fetch question", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -44,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid question data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create question", error: error.message });
+      res.status(500).json({ message: "Failed to create question", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -58,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid question data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to update question", error: error.message });
+      res.status(500).json({ message: "Failed to update question", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteQuestion(qNo);
       res.status(204).send();
     } catch (error) {
-      res.status(500).json({ message: "Failed to delete question", error: error.message });
+      res.status(500).json({ message: "Failed to delete question", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -80,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const passages = await storage.getPassages(limit, offset);
       res.json(passages);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch passages", error: error.message });
+      res.status(500).json({ message: "Failed to fetch passages", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -95,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(passage);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch passage", error: error.message });
+      res.status(500).json({ message: "Failed to fetch passage", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid passage data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create passage", error: error.message });
+      res.status(500).json({ message: "Failed to create passage", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid passage data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to update passage", error: error.message });
+      res.status(500).json({ message: "Failed to update passage", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deletePassage(passageId);
       res.status(204).send();
     } catch (error) {
-      res.status(500).json({ message: "Failed to delete passage", error: error.message });
+      res.status(500).json({ message: "Failed to delete passage", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -142,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questionTypes = await storage.getQuestionTypes();
       res.json(questionTypes);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch question types", error: error.message });
+      res.status(500).json({ message: "Failed to fetch question types", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -152,7 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const internalTypes = await storage.getInternalTypes(typeId);
       res.json(internalTypes);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch internal types", error: error.message });
+      res.status(500).json({ message: "Failed to fetch internal types", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid attempt data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create attempt", error: error.message });
+      res.status(500).json({ message: "Failed to create attempt", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -176,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = await storage.getDashboardStats();
       res.json(stats);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch dashboard stats", error: error.message });
+      res.status(500).json({ message: "Failed to fetch dashboard stats", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 

@@ -52,7 +52,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getQuestions(limit = 50, offset = 0, searchTerm?: string, typeFilter?: string): Promise<QuestionDetails[]> {
-    let query = db
+    let baseQuery = db
       .select({
         qNo: questions.qNo,
         questionTitle: questions.questionTitle,
@@ -84,27 +84,68 @@ export class DatabaseStorage implements IStorage {
       .from(questions)
       .innerJoin(questionTypes, eq(questions.typeId, questionTypes.typeId))
       .innerJoin(internalTypes, eq(questions.internalTypeId, internalTypes.internalTypeId))
-      .leftJoin(passages, eq(questions.passageId, passages.passageId))
+      .leftJoin(passages, eq(questions.passageId, passages.passageId));
+
+    // Apply filters
+    if (searchTerm && typeFilter && typeFilter !== 'all') {
+      const results = await baseQuery
+        .where(and(
+          or(
+            like(questions.questionText, `%${searchTerm}%`),
+            like(questions.questionTitle, `%${searchTerm}%`)
+          ),
+          eq(questionTypes.typeName, typeFilter)
+        ))
+        .orderBy(desc(questions.qNo))
+        .limit(limit)
+        .offset(offset);
+      
+      return results.map(row => ({
+        ...row,
+        passageTitle: row.passageTitle || undefined,
+        passageImage: row.passageImage || undefined
+      }));
+    } else if (searchTerm) {
+      const results = await baseQuery
+        .where(
+          or(
+            like(questions.questionText, `%${searchTerm}%`),
+            like(questions.questionTitle, `%${searchTerm}%`)
+          )
+        )
+        .orderBy(desc(questions.qNo))
+        .limit(limit)
+        .offset(offset);
+      
+      return results.map(row => ({
+        ...row,
+        passageTitle: row.passageTitle || undefined,
+        passageImage: row.passageImage || undefined
+      }));
+    } else if (typeFilter && typeFilter !== 'all') {
+      const results = await baseQuery
+        .where(eq(questionTypes.typeName, typeFilter))
+        .orderBy(desc(questions.qNo))
+        .limit(limit)
+        .offset(offset);
+      
+      return results.map(row => ({
+        ...row,
+        passageTitle: row.passageTitle || undefined,
+        passageImage: row.passageImage || undefined
+      }));
+    }
+
+    const results = await baseQuery
       .orderBy(desc(questions.qNo))
       .limit(limit)
       .offset(offset);
 
-    // Apply search filter
-    if (searchTerm) {
-      query = query.where(
-        or(
-          like(questions.questionText, `%${searchTerm}%`),
-          like(questions.questionTitle, `%${searchTerm}%`)
-        )
-      );
-    }
-
-    // Apply type filter
-    if (typeFilter && typeFilter !== 'all') {
-      query = query.where(eq(questionTypes.typeName, typeFilter));
-    }
-
-    return await query;
+    return results.map(row => ({
+      ...row,
+      passageTitle: row.passageTitle || undefined,
+      passageImage: row.passageImage || undefined
+    }));
   }
 
   async getQuestion(qNo: number): Promise<QuestionDetails | undefined> {
@@ -144,7 +185,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(questions.qNo, qNo))
       .limit(1);
 
-    return result[0] || undefined;
+    if (result[0]) {
+      return {
+        ...result[0],
+        passageTitle: result[0].passageTitle || undefined,
+        passageImage: result[0].passageImage || undefined
+      };
+    }
+
+    return undefined;
   }
 
   async createQuestion(question: InsertQuestion): Promise<Question> {
@@ -206,13 +255,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInternalTypes(typeId?: number): Promise<typeof internalTypes.$inferSelect[]> {
-    let query = db.select().from(internalTypes);
+    let baseQuery = db.select().from(internalTypes);
     
     if (typeId) {
-      query = query.where(eq(internalTypes.typeId, typeId));
+      const results = await baseQuery.where(eq(internalTypes.typeId, typeId)).orderBy(internalTypes.internalName);
+      return results;
     }
     
-    return await query.orderBy(internalTypes.internalName);
+    const results = await baseQuery.orderBy(internalTypes.internalName);
+    return results;
   }
 
   async createQuestionAttempt(attempt: InsertQuestionAttempt): Promise<typeof questionAttempts.$inferSelect> {

@@ -1,0 +1,602 @@
+[
+  {
+    "table_name": "internal_types",
+    "column_name": "internal_type_id",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "nextval('internal_types_internal_type_id_seq'::regclass)",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "internal_types",
+    "column_name": "type_id",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "internal_types",
+    "column_name": "internal_name",
+    "data_type": "character varying",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": 100
+  },
+  {
+    "table_name": "internal_types",
+    "column_name": "internal_name_en",
+    "data_type": "character varying",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": 100
+  },
+  {
+    "table_name": "internal_types",
+    "column_name": "description",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "internal_types",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "passage_summary",
+    "column_name": "passage_id",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "passage_summary",
+    "column_name": "passage_title",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 200
+  },
+  {
+    "table_name": "passage_summary",
+    "column_name": "passage_image",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 500
+  },
+  {
+    "table_name": "passage_summary",
+    "column_name": "avg_difficulty",
+    "data_type": "numeric",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "passage_summary",
+    "column_name": "status",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 20
+  },
+  {
+    "table_name": "passage_summary",
+    "column_name": "total_questions",
+    "data_type": "bigint",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "passage_summary",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "passages",
+    "column_name": "passage_id",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "nextval('passages_passage_id_seq'::regclass)",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "passages",
+    "column_name": "passage_title",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 200
+  },
+  {
+    "table_name": "passages",
+    "column_name": "passage_image",
+    "data_type": "character varying",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": 500
+  },
+  {
+    "table_name": "passages",
+    "column_name": "avg_difficulty",
+    "data_type": "numeric",
+    "is_nullable": "YES",
+    "column_default": "0.00",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "passages",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "passages",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "passages",
+    "column_name": "status",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": "'draft'::character varying",
+    "character_maximum_length": 20
+  },
+  {
+    "table_name": "question_attempts",
+    "column_name": "attempt_id",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "nextval('question_attempts_attempt_id_seq'::regclass)",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_attempts",
+    "column_name": "q_no",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_attempts",
+    "column_name": "student_id",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 100
+  },
+  {
+    "table_name": "question_attempts",
+    "column_name": "selected_answer",
+    "data_type": "character varying",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": 1
+  },
+  {
+    "table_name": "question_attempts",
+    "column_name": "is_correct",
+    "data_type": "boolean",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_attempts",
+    "column_name": "time_taken_seconds",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_attempts",
+    "column_name": "attempt_date",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "q_no",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "question_title",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 200
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "question_text",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "question_image",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 500
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "mc_a",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "mc_b",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "mc_c",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "mc_d",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "mc_correct",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 1
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "type_name",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 50
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "internal_name",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 100
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "passage_title",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 200
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "passage_image",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 500
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "question_order",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "avg_difficulty",
+    "data_type": "numeric",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "total_attempts",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "explanation_image",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 500
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "hint_image",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 500
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "tags",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "status",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 20
+  },
+  {
+    "table_name": "question_details",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_types",
+    "column_name": "type_id",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "nextval('question_types_type_id_seq'::regclass)",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_types",
+    "column_name": "type_name",
+    "data_type": "character varying",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": 50
+  },
+  {
+    "table_name": "question_types",
+    "column_name": "type_name_en",
+    "data_type": "character varying",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": 50
+  },
+  {
+    "table_name": "question_types",
+    "column_name": "description",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "question_types",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "q_no",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": "nextval('questions_q_no_seq'::regclass)",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "question_title",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 200
+  },
+  {
+    "table_name": "questions",
+    "column_name": "question_text",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "question_image",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 500
+  },
+  {
+    "table_name": "questions",
+    "column_name": "mc_a",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "mc_b",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "mc_c",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "mc_d",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "mc_correct",
+    "data_type": "character varying",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": 1
+  },
+  {
+    "table_name": "questions",
+    "column_name": "type_id",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "internal_type_id",
+    "data_type": "integer",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "passage_id",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "question_order",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": "1",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "avg_difficulty",
+    "data_type": "numeric",
+    "is_nullable": "YES",
+    "column_default": "0.00",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "total_attempts",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": "0",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "correct_attempts",
+    "data_type": "integer",
+    "is_nullable": "YES",
+    "column_default": "0",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "explanation_image",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 500
+  },
+  {
+    "table_name": "questions",
+    "column_name": "hint_image",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": 500
+  },
+  {
+    "table_name": "questions",
+    "column_name": "tags",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null
+  },
+  {
+    "table_name": "questions",
+    "column_name": "status",
+    "data_type": "character varying",
+    "is_nullable": "YES",
+    "column_default": "'draft'::character varying",
+    "character_maximum_length": 20
+  }
+]

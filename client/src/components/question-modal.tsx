@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { X, Save } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Save } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,31 +28,28 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
-import FileUpload from "./file-upload";
 import type { QuestionDetails, InsertQuestion } from "@shared/schema";
 
 const questionSchema = z.object({
   questionTitle: z.string().optional(),
   questionText: z.string().min(1, "Question text is required"),
-  typeId: z.number().min(1, "Question type is required"),
-  internalTypeId: z.number().min(1, "Internal type is required"),
+  questionImage: z.string().url().optional().or(z.literal("")),
   mcA: z.string().min(1, "Option A is required"),
   mcB: z.string().min(1, "Option B is required"),
   mcC: z.string().min(1, "Option C is required"),
   mcD: z.string().min(1, "Option D is required"),
-  mcCorrect: z.enum(["A", "B", "C", "D"]),
-  status: z.enum(["draft", "active", "inactive", "under_review"]),
+  mcCorrect: z.enum(["A", "B", "C", "D"], { required_error: "Please select the correct answer" }),
+  typeId: z.coerce.number().min(1, "Please select a question type"),
+  internalTypeId: z.coerce.number().min(1, "Please select an internal type"),
+  passageId: z.coerce.number().optional(),
+  questionOrder: z.coerce.number().min(1).default(1),
+  explanationImage: z.string().url().optional().or(z.literal("")),
+  hintImage: z.string().url().optional().or(z.literal("")),
   tags: z.string().optional(),
-  passageId: z.number().optional(),
-  questionOrder: z.number().optional(),
-  questionImage: z.string().optional(),
-  explanationImage: z.string().optional(),
-  hintImage: z.string().optional(),
+  status: z.enum(["draft", "active", "inactive"]),
 });
 
 type QuestionFormData = z.infer<typeof questionSchema>;
@@ -66,35 +63,47 @@ interface QuestionModalProps {
 
 const QuestionModal = ({ open, onClose, question, mode }: QuestionModalProps) => {
   const { toast } = useToast();
-  const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
 
   const form = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
     defaultValues: {
       questionTitle: "",
       questionText: "",
-      typeId: 0,
-      internalTypeId: 0,
+      questionImage: "",
       mcA: "",
       mcB: "",
       mcC: "",
       mcD: "",
       mcCorrect: "A",
-      status: "draft",
-      tags: "",
+      typeId: 0,
+      internalTypeId: 0,
+      passageId: 0,
       questionOrder: 1,
+      explanationImage: "",
+      hintImage: "",
+      tags: "",
+      status: "draft",
     },
   });
 
-  // Load question types
+  // Fetch question types
   const { data: questionTypes = [] } = useQuery({
     queryKey: ['/api/question-types'],
+    enabled: open,
   });
 
-  // Load internal types based on selected type
+  // Fetch internal types based on selected type
+  const selectedTypeId = form.watch('typeId');
   const { data: internalTypes = [] } = useQuery({
     queryKey: ['/api/internal-types', selectedTypeId],
-    enabled: !!selectedTypeId,
+    queryFn: () => apiRequest('GET', `/api/internal-types?typeId=${selectedTypeId}`),
+    enabled: open && selectedTypeId > 0,
+  });
+
+  // Fetch passages
+  const { data: passages = [] } = useQuery({
+    queryKey: ['/api/passages'],
+    enabled: open,
   });
 
   // Create/Update mutation
@@ -108,6 +117,7 @@ const QuestionModal = ({ open, onClose, question, mode }: QuestionModalProps) =>
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/questions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       toast({
         title: "Success",
         description: `Question ${mode === 'edit' ? 'updated' : 'created'} successfully`,
@@ -129,71 +139,64 @@ const QuestionModal = ({ open, onClose, question, mode }: QuestionModalProps) =>
       form.reset({
         questionTitle: question.questionTitle || "",
         questionText: question.questionText,
-        typeId: question.typeId,
-        internalTypeId: question.internalTypeId,
+        questionImage: question.questionImage || "",
         mcA: question.mcA,
         mcB: question.mcB,
         mcC: question.mcC,
         mcD: question.mcD,
         mcCorrect: question.mcCorrect as "A" | "B" | "C" | "D",
-        status: question.status as "draft" | "active" | "inactive" | "under_review",
-        tags: question.tags || "",
-        passageId: question.passageId || undefined,
+        typeId: question.typeId,
+        internalTypeId: question.internalTypeId,
+        passageId: question.passageId || 0,
         questionOrder: question.questionOrder || 1,
-        questionImage: question.questionImage || "",
         explanationImage: question.explanationImage || "",
         hintImage: question.hintImage || "",
+        tags: Array.isArray(question.tags) ? question.tags.join(", ") : (question.tags || ""),
+        status: question.status as "draft" | "active" | "inactive",
       });
-      setSelectedTypeId(question.typeId);
     } else if (mode === 'create') {
       form.reset({
         questionTitle: "",
         questionText: "",
-        typeId: 0,
-        internalTypeId: 0,
+        questionImage: "",
         mcA: "",
         mcB: "",
         mcC: "",
         mcD: "",
         mcCorrect: "A",
-        status: "draft",
-        tags: "",
+        typeId: 0,
+        internalTypeId: 0,
+        passageId: 0,
         questionOrder: 1,
+        explanationImage: "",
+        hintImage: "",
+        tags: "",
+        status: "draft",
       });
-      setSelectedTypeId(null);
     }
   }, [question, mode, form]);
 
   const onSubmit = (data: QuestionFormData) => {
     const submitData: InsertQuestion = {
-      ...data,
       questionTitle: data.questionTitle || null,
-      tags: data.tags || null,
-      passageId: data.passageId || null,
+      questionText: data.questionText,
       questionImage: data.questionImage || null,
+      mcA: data.mcA,
+      mcB: data.mcB,
+      mcC: data.mcC,
+      mcD: data.mcD,
+      mcCorrect: data.mcCorrect,
+      typeId: data.typeId,
+      internalTypeId: data.internalTypeId,
+      passageId: data.passageId || null,
+      questionOrder: data.questionOrder || 1,
       explanationImage: data.explanationImage || null,
       hintImage: data.hintImage || null,
+      tags: data.tags ? data.tags.split(",").map(tag => tag.trim()).filter(Boolean) : [],
+      status: data.status,
     };
     
     saveMutation.mutate(submitData);
-  };
-
-  const handleTypeChange = (value: string) => {
-    const typeId = parseInt(value);
-    setSelectedTypeId(typeId);
-    form.setValue("typeId", typeId);
-    form.setValue("internalTypeId", 0); // Reset internal type
-  };
-
-  const handleFileUpload = (file: File, field: string) => {
-    // TODO: Implement file upload to storage service
-    // For now, just set a placeholder URL
-    const mockUrl = `https://example.com/uploads/${file.name}`;
-    form.setValue(field as keyof QuestionFormData, mockUrl);
-    toast({
-      title: "File uploaded",
-      description: "File has been uploaded successfully",
-    });
   };
 
   return (
@@ -207,39 +210,162 @@ const QuestionModal = ({ open, onClose, question, mode }: QuestionModalProps) =>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Basic Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Title */}
+            <FormField
+              control={form.control}
+              name="questionTitle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Question Title (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g., سؤال في الفهم والاستيعاب"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Question Text */}
+            <FormField
+              control={form.control}
+              name="questionText"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Question Text *</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter the question text here..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Question Image URL */}
+            <FormField
+              control={form.control}
+              name="questionImage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Question Image URL (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="https://example.com/question-image.jpg"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Multiple Choice Options */}
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="questionTitle"
+                name="mcA"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Question Title</FormLabel>
+                    <FormLabel>Option A *</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="e.g., اختر الإجابة الصحيحة"
-                        {...field}
-                      />
+                      <Textarea placeholder="Enter option A" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="mcB"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Option B *</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter option B" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="mcC"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Option C *</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter option C" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="mcD"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Option D *</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter option D" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
+            {/* Correct Answer */}
+            <FormField
+              control={form.control}
+              name="mcCorrect"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Correct Answer *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select the correct answer" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="A">A</SelectItem>
+                      <SelectItem value="B">B</SelectItem>
+                      <SelectItem value="C">C</SelectItem>
+                      <SelectItem value="D">D</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Type Selection */}
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="typeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Question Type</FormLabel>
-                    <Select onValueChange={handleTypeChange} value={field.value?.toString()}>
+                    <FormLabel>Question Type *</FormLabel>
+                    <Select onValueChange={(value) => {
+                      field.onChange(Number(value));
+                      form.setValue('internalTypeId', 0); // Reset internal type
+                    }} value={field.value?.toString()}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select Type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {questionTypes.map((type) => (
+                        {questionTypes.map((type: any) => (
                           <SelectItem key={type.typeId} value={type.typeId.toString()}>
                             {type.typeName} ({type.typeNameEn})
                           </SelectItem>
@@ -250,19 +376,17 @@ const QuestionModal = ({ open, onClose, question, mode }: QuestionModalProps) =>
                   </FormItem>
                 )}
               />
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="internalTypeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Internal Type</FormLabel>
+                    <FormLabel>Internal Type *</FormLabel>
                     <Select 
-                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      onValueChange={(value) => field.onChange(Number(value))} 
                       value={field.value?.toString()}
-                      disabled={!selectedTypeId}
+                      disabled={!selectedTypeId || selectedTypeId === 0}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -270,13 +394,61 @@ const QuestionModal = ({ open, onClose, question, mode }: QuestionModalProps) =>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {internalTypes.map((type) => (
+                        {internalTypes.map((type: any) => (
                           <SelectItem key={type.internalTypeId} value={type.internalTypeId.toString()}>
                             {type.internalName}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Passage Selection */}
+            <FormField
+              control={form.control}
+              name="passageId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Passage (Optional)</FormLabel>
+                  <Select onValueChange={(value) => field.onChange(Number(value))} value={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Passage (if applicable)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="0">No Passage</SelectItem>
+                      {passages.map((passage: any) => (
+                        <SelectItem key={passage.passageId} value={passage.passageId.toString()}>
+                          {passage.passageTitle || `Passage ${passage.passageId}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Additional Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="questionOrder"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Question Order</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="1"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -298,7 +470,6 @@ const QuestionModal = ({ open, onClose, question, mode }: QuestionModalProps) =>
                         <SelectItem value="draft">Draft</SelectItem>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="under_review">Under Review</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -307,100 +478,40 @@ const QuestionModal = ({ open, onClose, question, mode }: QuestionModalProps) =>
               />
             </div>
 
-            {/* Question Text */}
-            <FormField
-              control={form.control}
-              name="questionText"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Question Text</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      rows={4}
-                      placeholder="Enter the question text here..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Question Image Upload */}
-            <FileUpload
-              label="Question Image (Optional)"
-              onFileSelect={(file) => handleFileUpload(file, 'questionImage')}
-              currentFile={form.watch('questionImage')}
-              onFileRemove={() => form.setValue('questionImage', '')}
-            />
-
-            {/* Multiple Choice Options */}
-            <div className="space-y-4">
-              <Label className="text-sm font-medium text-secondary-700">
-                Multiple Choice Options
-              </Label>
-              
+            {/* Image URLs */}
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="mcCorrect"
+                name="explanationImage"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>Explanation Image URL</FormLabel>
                     <FormControl>
-                      <RadioGroup onValueChange={field.onChange} value={field.value}>
-                        {[
-                          { value: 'A', label: 'Option A', color: 'bg-primary-100 text-primary-700' },
-                          { value: 'B', label: 'Option B', color: 'bg-green-100 text-green-700' },
-                          { value: 'C', label: 'Option C', color: 'bg-yellow-100 text-yellow-700' },
-                          { value: 'D', label: 'Option D', color: 'bg-red-100 text-red-700' },
-                        ].map(({ value, label, color }) => (
-                          <div key={value} className="flex items-center space-x-3">
-                            <div className="flex-shrink-0">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${color}`}>
-                                <span className="text-sm font-medium">{value}</span>
-                              </div>
-                            </div>
-                            <FormField
-                              control={form.control}
-                              name={`mc${value}` as keyof QuestionFormData}
-                              render={({ field: optionField }) => (
-                                <FormItem className="flex-1">
-                                  <FormControl>
-                                    <Input 
-                                      placeholder={label}
-                                      {...optionField}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <RadioGroupItem value={value} id={value} />
-                          </div>
-                        ))}
-                      </RadioGroup>
+                      <Input 
+                        placeholder="https://example.com/explanation.jpg"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
 
-            {/* Additional Content */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FileUpload
-                label="Explanation Image (Optional)"
-                description="Upload explanation"
-                onFileSelect={(file) => handleFileUpload(file, 'explanationImage')}
-                currentFile={form.watch('explanationImage')}
-                onFileRemove={() => form.setValue('explanationImage', '')}
-              />
-
-              <FileUpload
-                label="Hint Image (Optional)"
-                description="Upload hint"
-                onFileSelect={(file) => handleFileUpload(file, 'hintImage')}
-                currentFile={form.watch('hintImage')}
-                onFileRemove={() => form.setValue('hintImage', '')}
+              <FormField
+                control={form.control}
+                name="hintImage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hint Image URL</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="https://example.com/hint.jpg"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
 
@@ -410,15 +521,15 @@ const QuestionModal = ({ open, onClose, question, mode }: QuestionModalProps) =>
               name="tags"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tags</FormLabel>
+                  <FormLabel>Tags (comma-separated)</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Enter tags separated by commas"
+                      placeholder="e.g., geometry, algebra, intermediate"
                       {...field}
                     />
                   </FormControl>
                   <p className="text-xs text-secondary-500">
-                    e.g., algebra, easy, high-school
+                    Separate multiple tags with commas
                   </p>
                   <FormMessage />
                 </FormItem>

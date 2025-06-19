@@ -26,6 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
+import PassageModal from "@/components/passage-modal";
 import type { Passage } from "@shared/schema";
 
 const Passages = () => {
@@ -33,6 +34,9 @@ const Passages = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [passageToDelete, setPassageToDelete] = useState<number | null>(null);
+  const [isPassageModalOpen, setIsPassageModalOpen] = useState(false);
+  const [selectedPassage, setSelectedPassage] = useState<Passage | null>(null);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
 
   // Load passages
   const { data: passages = [], isLoading } = useQuery<Passage[]>({
@@ -74,17 +78,20 @@ const Passages = () => {
   };
 
   const handleAddPassage = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Passage creation functionality will be implemented here",
-    });
+    setSelectedPassage(null);
+    setModalMode('create');
+    setIsPassageModalOpen(true);
   };
 
   const handleEditPassage = (passage: Passage) => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Passage editing functionality will be implemented here",
-    });
+    setSelectedPassage(passage);
+    setModalMode('edit');
+    setIsPassageModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsPassageModalOpen(false);
+    setSelectedPassage(null);
   };
 
   const handleViewPassage = (passage: Passage) => {
@@ -282,7 +289,7 @@ const Passages = () => {
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-secondary-600">
-                              {formatTimeAgo(passage.createdAt.toString())}
+                              {passage.createdAt ? formatTimeAgo(passage.createdAt.toString()) : 'Unknown'}
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
@@ -329,6 +336,14 @@ const Passages = () => {
           </Card>
         </div>
       </main>
+
+      {/* Passage Modal */}
+      <PassageModal
+        open={isPassageModalOpen}
+        onClose={closeModal}
+        passage={selectedPassage}
+        mode={modalMode}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
